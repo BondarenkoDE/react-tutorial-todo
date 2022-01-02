@@ -5,11 +5,14 @@ import { Item } from "./components/Item";
 
 function reducer(state, action) {
   if (action.type === "ADD_TASK") {
-    console.log("action.payload: ", action.payload);
     return [...state, action.payload];
   }
 
-  console.log("action.payload: ", action.payload);
+  if (action.type === "DELETE_TASK") {
+    const filteredState = state.filter(({ id }) => id !== action.payload);
+
+    return filteredState;
+  }
 
   return state;
 }
@@ -49,6 +52,17 @@ function App() {
     setCompletedTask(false);
   };
 
+  const deleteTaskDispatch = (id) => {
+    const question = window.confirm("Вы точно хотите удалить данную задачу?");
+
+    if (question) {
+      dispatch({
+        type: "DELETE_TASK",
+        payload: id,
+      });
+    }
+  };
+
   return (
     <div className="App">
       <Paper className="wrapper">
@@ -71,7 +85,13 @@ function App() {
         <Divider />
         <List>
           {state.map((obj) => (
-            <Item key={obj.id} text={obj.text} completed={obj.completed} />
+            <Item
+              key={obj.id}
+              id={obj.id}
+              text={obj.text}
+              completed={obj.completed}
+              deleteTask={deleteTaskDispatch}
+            />
           ))}
         </List>
         <Divider />
