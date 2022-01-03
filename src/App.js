@@ -14,12 +14,47 @@ function reducer(state, action) {
     return filteredState;
   }
 
+  if (action.type === "TOGGLE_COMPLETED") {
+    return state.map((obj) => {
+      if (obj.id === action.payload) {
+        return {
+          ...obj,
+          completed: !obj.completed,
+        };
+      } else {
+        return obj;
+      }
+    });
+  }
+
+  if (action.type === "DELETE_ALL_TASKS") {
+    return [];
+  }
+
+  if (action.type === "SELECT_ALL_TASKS") {
+    return state.map((obj) => {
+      if (action.payload === false) {
+        return {
+          ...obj,
+          completed: true,
+        };
+      } else {
+        return {
+          ...obj,
+          completed: false,
+        };
+      }
+    });
+  }
+
   return state;
 }
 
 function App() {
   const [taskText, setTaskText] = React.useState("");
   const [completedTask, setCompletedTask] = React.useState(false);
+  const [isSelectedAll, setIsSelectedAll] = React.useState(false);
+  const [filterTasks, setFilterTasks] = React.useState(0);
 
   const [state, dispatch] = React.useReducer(reducer, [
     {
@@ -50,16 +85,41 @@ function App() {
 
     setTaskText("");
     setCompletedTask(false);
+    setIsSelectedAll(false);
   };
 
   const deleteTaskDispatch = (id) => {
-    const question = window.confirm("Вы точно хотите удалить данную задачу?");
-
-    if (question) {
+    if (window.confirm("Вы точно хотите удалить данную задачу?")) {
       dispatch({
         type: "DELETE_TASK",
         payload: id,
       });
+    }
+  };
+
+  const toggleCompleteDispatch = (id) => {
+    dispatch({
+      type: "TOGGLE_COMPLETED",
+      payload: id,
+    });
+  };
+
+  const deleteAllTasksDispatch = () => {
+    if (window.confirm("Вы точно хотите удалить ВСЕ задачи?")) {
+      dispatch({
+        type: "DELETE_ALL_TASKS",
+      });
+    }
+  };
+
+  const selectAllTasksDispatch = () => {
+    if (state.length !== 0) {
+      dispatch({
+        type: "SELECT_ALL_TASKS",
+        payload: isSelectedAll,
+      });
+
+      setIsSelectedAll(!isSelectedAll);
     }
   };
 
@@ -77,27 +137,37 @@ function App() {
           completedTask={completedTask}
         />
         <Divider />
-        <Tabs value={0}>
-          <Tab label="Все" />
-          <Tab label="Активные" />
-          <Tab label="Завершённые" />
+        <Tabs value={filterTasks}>
+          <Tab label="Все" onClick={() => setFilterTasks(0)} />
+          <Tab label="Активные" onClick={() => setFilterTasks(1)} />
+          <Tab label="Завершённые" onClick={() => setFilterTasks(2)} />
         </Tabs>
         <Divider />
         <List>
-          {state.map((obj) => (
-            <Item
-              key={obj.id}
-              id={obj.id}
-              text={obj.text}
-              completed={obj.completed}
-              deleteTask={deleteTaskDispatch}
-            />
-          ))}
+          {state.map((obj) => {
+            if (
+              filterTasks === 0 ||
+              (obj.completed === false && filterTasks === 1) ||
+              (obj.completed === true && filterTasks === 2)
+            ) {
+              return (
+                <Item
+                  key={obj.id}
+                  text={obj.text}
+                  completed={obj.completed}
+                  deleteTask={() => deleteTaskDispatch(obj.id)}
+                  onClickCheckbox={() => toggleCompleteDispatch(obj.id)}
+                />
+              );
+            }
+          })}
         </List>
         <Divider />
         <div className="check-buttons">
-          <Button>Отметить всё</Button>
-          <Button>Очистить</Button>
+          <Button onClick={selectAllTasksDispatch}>
+            {isSelectedAll ? "Снять отметки" : "Отметить всё"}
+          </Button>
+          <Button onClick={deleteAllTasksDispatch}>Очистить</Button>
         </div>
       </Paper>
     </div>
